@@ -7,6 +7,23 @@ from test_blocks import base_blocks, base_blocks_category
 import pandas as pd  # Import pandas for DataFrame
 import json  # Import json to parse JSON strings
 
+
+def colorful_title(text):
+    colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33F3', '#33FFF3', '#F3FF33']
+    colored_text = ''
+    color_index = 0
+    for char in text:
+        if char != ' ':
+            colored_text += f'<span style="color:{colors[color_index % len(colors)]};">{char}</span>'
+            color_index += 1
+        else:
+            colored_text += ' '  # Preserve spaces
+    return f'<h1 style="text-align: center;">{colored_text}</h1>'
+
+   # Display the colorful title
+st.markdown(colorful_title('Fun Blocks Content Map'), unsafe_allow_html=True)
+
+
 barfi_schema_name = st.selectbox(
     'Select a saved schema to load:', barfi_schemas()
 )

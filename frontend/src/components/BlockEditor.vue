@@ -78,7 +78,7 @@
         <baklava-editor :plugin="viewPlugin" />
         <div class="button-menu">
             <button @click="menuModal = !menuModal">Menu</button>
-            <button @click="executeEditorData">Execute</button>
+            <button @click="executeEditorData">Convert</button>
         </div>
     </div>
 </template>
@@ -159,7 +159,11 @@ export default {
         this.editor.events.addNode.addListener(this, (data) => {
             this.editor._nodes.forEach((node) => {
                 if (node.id === data.id) {
-                    node.name = node.name + "-" + this.BlockNameID[data.name]++;
+                    // Check if the node name is not "Curriculum" or "Topic"
+                    if (node.name !== "Curriculum" && node.name !== "Topic") {
+                        node.name = node.name + "-" + this.BlockNameID[data.name]++;
+                    }
+                    // If it's "Curriculum" or "Topic", do not modify the name
                 }
             });
         });
