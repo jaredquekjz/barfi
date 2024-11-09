@@ -2,7 +2,10 @@ import Vue from "vue";
 import App from "./App.vue";
 
 import { BaklavaVuePlugin } from "@baklavajs/plugin-renderer-vue";
+
+// Then import your custom CSS
 import "./assets/styles.css";
+
 
 Vue.use(BaklavaVuePlugin);
 

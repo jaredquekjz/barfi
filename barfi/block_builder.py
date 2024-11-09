@@ -149,6 +149,7 @@ class Block(object):
         _option = build_option(name, type, kwargs)
 
         self._options[_option['name']] = _option
+        print(f"Option added: {_option['name']} with value {_option['value']}")
 
     def set_option(self, name: str, **kwargs):
         # Can only set the 'value' property for now.
@@ -170,6 +171,7 @@ class Block(object):
         if name in self._options:
             return self._options[name]['value']
         else:
+            print(f"Available options: {list(self._options.keys())}")
             raise ValueError(f'Option name: {name} does not exist in Block.')
 
     def _export(self):

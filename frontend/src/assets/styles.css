@@ -809,3 +809,48 @@
 .node-editor .background {
     border-radius: 2px;
 }
+/* ... existing code ... */
+
+/* ... existing code ... */
+
+/* ... existing styles ... */
+
+.node.--type-Curriculum {
+    --node-bg: rgba(76, 175, 80, 0.8) !important;       /* Green background */
+    --node-title-bg: rgba(56, 142, 60, 1) !important;   /* Darker green title */
+}
+
+.node.--type-Concept {
+    --node-bg: rgba(33, 150, 243, 0.8) !important;      /* Blue background */
+    --node-title-bg: rgba(25, 118, 210, 1) !important;  /* Darker blue title */
+}
+
+/* Topic Node - Magenta Theme */
+.node.--type-Topic {
+    --node-bg: rgba(156, 39, 176, 0.8) !important;     /* Magenta background */
+    --node-title-bg: rgba(123, 31, 162, 1) !important; /* Darker magenta title */
+}
+
+/* Sub-Topic Node - Orange Theme */
+.node.--type-Sub-Topic {
+    --node-bg: rgba(255, 152, 0, 0.8) !important;      /* Orange background */
+    --node-title-bg: rgba(245, 124, 0, 1) !important;  /* Darker orange title */
+}
+/* Option blocks */
+.node.--type-Checkbox,
+.node.--type-Input,
+.node.--type-Integer,
+.node.--type-Number,
+.node.--type-Select,
+.node.--type-Slider {
+    --node-bg: rgba(156, 39, 176, 0.8) !important;
+    --node-title-bg: rgba(123, 31, 162, 1) !important;
+}
+
+/* Ensure text remains readable on colored backgrounds */
+.node {
+    --node-text: white !important;
+    --node-title-text: white !important;
+}
+
+/* ... rest of your styles ... */

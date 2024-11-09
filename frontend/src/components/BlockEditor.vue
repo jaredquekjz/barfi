@@ -115,6 +115,7 @@ export default {
         // Register the plugins
         // The view plugin is used for rendering the nodes
         this.editor.use(this.viewPlugin);
+        
         // The option plugin provides some default option UI elements
         this.editor.use(new OptionPlugin());
         // The engine plugin computes the nodes in the graph in the
@@ -162,6 +163,7 @@ export default {
                 }
             });
         });
+
     },
     methods: {
         executeEditorData() {
