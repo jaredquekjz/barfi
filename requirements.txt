@@ -1,4 +1,4 @@
--e ./barfi  # Install the 'barfi' package from the './barfi' directory
+-e .  # Install the 'barfi' package from the './barfi' directory
 alabaster==0.7.12
 altair==4.2.0
 appnope==0.1.2
