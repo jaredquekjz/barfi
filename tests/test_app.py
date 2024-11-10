@@ -175,4 +175,5 @@ def extract_input_values(barfi_result):
         )
 
 if barfi_result:
+    st.write(barfi_result)
     extract_input_values(barfi_result)

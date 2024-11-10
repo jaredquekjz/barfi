@@ -58,6 +58,6 @@ concept.add_compute(concept_compute)
 # Define the base blocks list and category
 base_blocks = [curriculum, topic, sub_topic, concept]
 base_blocks_category = {
-    'Inputs': [curriculum, topic, sub_topic],
-    'Result': [concept]
+    'Multiple': [sub_topic, concept],
+    'One Per Category': [curriculum, topic],
 }
