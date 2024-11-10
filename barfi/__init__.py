@@ -9,7 +9,7 @@ from .manage_schema import editor_preset
 
 import os
 
-_RELEASE = False
+_RELEASE = True
 
 # Declare a Streamlit component. `declare_component` returns a function
 # that is used to create instances of the component. We're naming this
