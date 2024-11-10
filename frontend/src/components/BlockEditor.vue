@@ -156,17 +156,17 @@ export default {
         this.loadSchemaName = this.args.load_schema_name;
 
         // Change name of the added node to get a unique name.
-        this.editor.events.addNode.addListener(this, (data) => {
-            this.editor._nodes.forEach((node) => {
-                if (node.id === data.id) {
-                    // Check if the node name is not "Curriculum" or "Topic"
-                    if (node.name !== "Curriculum" && node.name !== "Topic") {
-                        node.name = node.name + "-" + this.BlockNameID[data.name]++;
-                    }
-                    // If it's "Curriculum" or "Topic", do not modify the name
-                }
-            });
-        });
+        // this.editor.events.addNode.addListener(this, (data) => {
+        //     this.editor._nodes.forEach((node) => {
+        //         if (node.id === data.id) {
+        //             // Check if the node name is not "Curriculum" or "Topic"
+        //             if (node.name !== "Curriculum" && node.name !== "Topic") {
+        //                 node.name = node.name + "-" + this.BlockNameID[data.name]++;
+        //             }
+        //             // If it's "Curriculum" or "Topic", do not modify the name
+        //         }
+        //     });
+        // });
 
     },
     methods: {

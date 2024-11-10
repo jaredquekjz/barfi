@@ -163,17 +163,20 @@ def extract_input_values(barfi_result):
 
     # Add a spaced line break between the DataFrame and the download button
     st.markdown('<br>', unsafe_allow_html=True)
-
     # Include the download button after DataFrame is populated
     if not df.empty:
         csv = df.to_csv(index=False).encode('utf-8')
+
+        # Construct the file name using the curriculum value
+        file_name = f"{curriculum_value} Content Map.csv"
+
         st.download_button(
             label='Download Data as CSV',
             data=csv,
-            file_name='barfi_data.csv',
+            file_name=file_name,
             mime='text/csv',
         )
 
 if barfi_result:
-    st.write(barfi_result)
+    # st.write(barfi_result)
     extract_input_values(barfi_result)
