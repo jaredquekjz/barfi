@@ -7,7 +7,6 @@ from test_blocks import base_blocks, base_blocks_category
 import pandas as pd  # Import pandas for DataFrame
 import json  # Import json to parse JSON strings
 
-
 def colorful_title(text):
     colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33F3', '#33FFF3', '#F3FF33']
     colored_text = ''
@@ -20,28 +19,18 @@ def colorful_title(text):
             colored_text += ' '  # Preserve spaces
     return f'<h1 style="text-align: center;">{colored_text}</h1>'
 
-   # Display the colorful title
+# Display the colorful title
 st.markdown(colorful_title('Fun Blocks Content Map'), unsafe_allow_html=True)
 
-
 barfi_schema_name = st.selectbox(
-    'Select a saved schema to load:', barfi_schemas()
+    'Select a saved content map:', barfi_schemas()
 )
 
-compute_engine = st.checkbox('Activate barfi compute engine', value=False)
+# Remove the compute engine checkbox and set compute_engine to False
+compute_engine = False
 
 # Initialize an empty DataFrame
 df = pd.DataFrame()
-
-# Include the download button at the top of the app
-if not df.empty:
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label='Download Data as CSV',
-        data=csv,
-        file_name='barfi_data.csv',
-        mime='text/csv',
-    )
 
 barfi_result = st_barfi(
     base_blocks=base_blocks_category,
@@ -50,7 +39,6 @@ barfi_result = st_barfi(
 )
 
 def extract_input_values(barfi_result):
-    global df
     # Check the type of barfi_result
     if isinstance(barfi_result, dict):
         barfi_output = barfi_result
@@ -89,13 +77,6 @@ def extract_input_values(barfi_result):
             }
         }
 
-    # Map interface IDs to node IDs
-    interface_id_to_node_id = {}
-    for node in nodes:
-        for interface in node.get('interfaces', []):
-            interface_id = interface[1]['id']
-            interface_id_to_node_id[interface_id] = node['id']
-
     # Initialize data list to collect rows for the DataFrame
     data_list = []
 
@@ -105,10 +86,10 @@ def extract_input_values(barfi_result):
 
     for node_id, info in node_id_to_info.items():
         if info['type'] == 'Curriculum':
-            curriculum_value = info['options'].get('input-option', '')
+            curriculum_value = info['options'].get('Type here...', '')
             curriculum_values.append(curriculum_value)
         elif info['type'] == 'Topic':
-            topic_value = info['options'].get('input-option', '')
+            topic_value = info['options'].get('Type here...', '')
             topic_values.append(topic_value)
 
     # Use the first Curriculum and Topic values (assuming one each)
@@ -146,8 +127,8 @@ def extract_input_values(barfi_result):
             concept_node_id = concept_input_interfaces[to_interface_id]
 
             # Collect values for each connection
-            sub_topic_value = node_id_to_info[sub_topic_node_id]['options'].get('input-option', '')
-            concept_value = node_id_to_info[concept_node_id]['options'].get('input-option', '')
+            sub_topic_value = node_id_to_info[sub_topic_node_id]['options'].get('Type here...', '')
+            concept_value = node_id_to_info[concept_node_id]['options'].get('Type here...', '')
 
             # Create a data dictionary for this row
             data = {
@@ -180,12 +161,9 @@ def extract_input_values(barfi_result):
     # Display the DataFrame without the index and left-aligned
     st.write(df.to_html(index=False, justify='left'), unsafe_allow_html=True)
 
-    # Display the JSON output for debugging
-    st.write("barfi_result JSON output:")
-    st.write(barfi_result)
+    # Add a spaced line break between the DataFrame and the download button
+    st.markdown('<br>', unsafe_allow_html=True)
 
-if barfi_result:
-    extract_input_values(barfi_result)
     # Include the download button after DataFrame is populated
     if not df.empty:
         csv = df.to_csv(index=False).encode('utf-8')
@@ -195,3 +173,6 @@ if barfi_result:
             file_name='barfi_data.csv',
             mime='text/csv',
         )
+
+if barfi_result:
+    extract_input_values(barfi_result)
