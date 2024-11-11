@@ -1,5 +1,5 @@
-import sys
-sys.path.append('../')
+# import sys
+# sys.path.append('../')
 from matplotlib import pyplot as plt
 from barfi import st_barfi, barfi_schemas
 import streamlit as st
