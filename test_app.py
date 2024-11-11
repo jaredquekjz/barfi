@@ -166,9 +166,9 @@ def extract_input_values(barfi_result):
         if level3_value.strip() == '':
             continue
 
-        # Add Level 3 row with orange text
+        # Add Level 3 row with orange text and 'Node' in 'Type' column
         data_list.append({
-            'Type': '',
+            'Type': 'Node',  # Set 'Type' to 'Node' for Level 3 Sub-Topics
             'Level 1': '',
             'Level 2': '',
             'Level 3': f"<span style='color: orange;'>{level3_value}</span>",  # Level 3 in orange
@@ -198,8 +198,18 @@ def extract_input_values(barfi_result):
     # Convert all columns to string, replace NaN with empty string
     df = df.fillna('').astype(str)
 
+    # --- Shift 'Type' and 'Level 3' Columns Up ---
+    df['Type'] = df['Type'].shift(-1)
+    df['Level 3'] = df['Level 3'].shift(-1)
+
+    # Remove the last row since 'Type' and 'Level 3' will have NaN after shifting
+    df = df[:-1]
+    # --- End of Shift ---
+
+    # Remove "Type" from the heading of the first column
+    df.rename(columns={'Type': ''}, inplace=True)
+
     # Adjust DataFrame styles for alignment and display
-    # Create a style object to left-align all columns and hide the index
     df_style = df.style.set_properties(**{'text-align': 'left'}).hide_index()
 
     # Render the DataFrame with HTML formatting
@@ -213,6 +223,9 @@ def extract_input_values(barfi_result):
         # Create a clean DataFrame for CSV export by removing HTML tags
         df_csv = df.copy()
         df_csv['Level 3'] = df_csv['Level 3'].str.replace(r'<[^>]*>', '', regex=True)
+
+        # Remove "Type" from the heading of the first column in CSV
+        df_csv.rename(columns={'Type': ''}, inplace=True)
 
         # Convert DataFrame to CSV
         csv = df_csv.to_csv(index=False).encode('utf-8')
