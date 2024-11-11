@@ -81,127 +81,164 @@
             <button @click="executeEditorData">Convert</button>
         </div>
     </div>
-</template>
 
-<script>
-import { Streamlit } from "streamlit-component-lib";
-import { Editor } from "@baklavajs/core";
-import { ViewPlugin } from "@baklavajs/plugin-renderer-vue";
-import { OptionPlugin } from "@baklavajs/plugin-options-vue";
-import { Engine } from "@baklavajs/plugin-engine";
-import { BlockBuilder } from "./BlockBuilder";
 
-export default {
-    name: "BlockEditor",
-    // Arguments that are passed to the plugin in Python are
-    // accessible in props `args`. Here, we access the "name" arg.
-    props: ["args"],
-    data() {
-        return {
-            editor: new Editor(),
-            viewPlugin: new ViewPlugin(),
-            engine: new Engine(true),
-            menuModal: false,
-            listTab: true,
-            saveTab: false,
-            saveSchemaName: "",
-            loadSchemaName: "",
-            loadSchemas: [],
-            BlockNameID: {},
-        };
-    },
-    created() {
-        this.loadSchemas = this.args.load_schema_names;
-        // Register the plugins
-        // The view plugin is used for rendering the nodes
-        this.editor.use(this.viewPlugin);
-        
-        // The option plugin provides some default option UI elements
-        this.editor.use(new OptionPlugin());
-        // The engine plugin computes the nodes in the graph in the
-        // correct order using the "compute" methods of the nodes
-        this.editor.use(this.engine);
+  </template>
+  
+  <script>
+  import { Streamlit } from "streamlit-component-lib";
+  import { Editor } from "@baklavajs/core";
+  import { ViewPlugin } from "@baklavajs/plugin-renderer-vue";
+  import { OptionPlugin } from "@baklavajs/plugin-options-vue";
+  import { Engine } from "@baklavajs/plugin-engine";
+  import { BlockBuilder } from "./BlockBuilder";
+  
+  export default {
+      name: "BlockEditor",
+      props: ["args"],
+      data() {
+          return {
+              editor: new Editor(),
+              viewPlugin: new ViewPlugin(),
+              engine: new Engine(true),
+              menuModal: false,
+              listTab: true,
+              saveTab: false,
+              saveSchemaName: "",
+              loadSchemaName: "",
+              loadSchemas: [],
+              BlockNameID: {}, // Initialize the counter for block names
+          };
+      },
+      created() {
+          this.loadSchemas = this.args.load_schema_names;
+  
+          // Register the plugins
+          this.editor.use(this.viewPlugin);
+          this.editor.use(new OptionPlugin());
+          this.editor.use(this.engine);
+  
+          // Show a minimap in the top right corner
+          this.viewPlugin.enableMinimap = true;
+  
+          console.log(this.args);
+  
+          // Read the infos on the node passed in from Streamlit
+          // and register them.
+          this.args.base_blocks.forEach((el) => {
+              const Block = BlockBuilder({
+                  BlockName: el.name,
+                  Inputs: el.inputs,
+                  Outputs: el.outputs,
+                  Options: el.options,
+              });
+  
+              // Register the nodes we have defined
+              if (Object.prototype.hasOwnProperty.call(el, "category")) {
+                  this.editor.registerNodeType(el.name, Block, el.category);
+              } else {
+                  this.editor.registerNodeType(el.name, Block);
+              }
+              
+              // Moved BlockNameID initialization to after schema loading
+          });
+  
+          // Load the editor data if load_editor_schema is not null
+          if (this.args.load_editor_schema) {
+              this.editor.load(this.args.load_editor_schema);
+              // Update BlockNameID counters based on existing nodes
+              this.updateBlockNameIDCounters();
+          } else {
+              // Initialize BlockNameID for all block types starting from 1
+              this.args.base_blocks.forEach((el) => {
+                  this.BlockNameID[el.name] = 1;
+              });
+          }
+  
+          this.loadSchemaName = this.args.load_schema_name;
+  
+          // Change name of the added node to get a unique name
+          this.editor.events.addNode.addListener(this, (data) => {
+              this.editor.nodes.forEach((node) => {
+                  if (node.id === data.id) {
+                      // Check if the node name is not "Curriculum"
+                      if (node.name !== "Curriculum") {
+                          node.name = node.name + "-" + this.BlockNameID[data.name]++;
+                      }
+                  }
+              });
+          });
+      },
+      methods: {
+          executeEditorData() {
+              // Retrieve the editor data and pass it back to Streamlit
+              Streamlit.setComponentValue({
+                  command: "execute",
+                  editor_state: this.editor.save(),
+              });
+          },
+          saveEditorData() {
+              Streamlit.setComponentValue({
+                  command: "save",
+                  schema_name: this.saveSchemaName,
+                  editor_state: this.editor.save(),
+              });
+              this.saveSchemaName = "";
+              this.menuModal = !this.menuModal;
+          },
+          activateTab(tabName) {
+              if (tabName === "listTab") {
+                  this.listTab = true;
+                  this.saveTab = false;
+              }
+              if (tabName === "saveTab") {
+                  this.listTab = false;
+                  this.saveTab = true;
+              }
+          },
+          updateBlockNameIDCounters() {
+              // Initialize counters
+              this.BlockNameID = {};
+  
+              // Iterate over existing nodes to update BlockNameID
+              this.editor.nodes.forEach((node) => {
+                  // Skip nodes that should not be renamed
+                  if (node.name === "Curriculum") {
+                      return;
+                  }
+  
+                  // Extract the base name and number from the node name
+                  const match = node.name.match(/^(.*?)-(\d+)$/);
+                  if (match) {
+                      const baseName = match[1];
+                      const num = parseInt(match[2]);
+  
+                      if (!this.BlockNameID[baseName] || this.BlockNameID[baseName] <= num) {
+                          this.BlockNameID[baseName] = num + 1;
+                      }
+                  } else {
+                      // If no number suffix, start from 2
+                      if (!this.BlockNameID[node.name]) {
+                          this.BlockNameID[node.name] = 2;
+                      }
+                  }
+              });
+  
+              // For block types not present in the nodes, ensure the counter starts at 1
+              this.args.base_blocks.forEach((el) => {
+                  if (!this.BlockNameID[el.name]) {
+                      this.BlockNameID[el.name] = 1;
+                  }
+              });
+  
+              console.log("Updated BlockNameID:", this.BlockNameID);
+          },
+      },
+  };
 
-        // Show a minimap in the top right corner
-        this.viewPlugin.enableMinimap = true;
-
-        console.log(this.args);
-        // Read the infos on the node passed in from Streamlit
-        // and register them.
-        this.args.base_blocks.forEach((el) => {
-            const Block = BlockBuilder({
-                BlockName: el.name,
-                Inputs: el.inputs,
-                Outputs: el.outputs,
-                Options: el.options,
-            });
-            // register the nodes we have defined, so they can be
-            // added by the user as well as saved & loaded. Add a
-            // category to it if it exists.
-
-            if (Object.prototype.hasOwnProperty.call(el, "category")) {
-                this.editor.registerNodeType(el.name, Block, el.category);
-            } else {
-                this.editor.registerNodeType(el.name, Block);
-            }
-
-            // this.editor.registerNodeType(el.name, Block);
-            this.BlockNameID[el.name] = 1;
-        });
-
-        // Load the editor data if load_editor_schema not equal to null.
-        if (this.args.load_editor_schema) {
-            this.editor.load(this.args.load_editor_schema);
-        }
-        this.loadSchemaName = this.args.load_schema_name;
-
-        // Change name of the added node to get a unique name.
-        // this.editor.events.addNode.addListener(this, (data) => {
-        //     this.editor._nodes.forEach((node) => {
-        //         if (node.id === data.id) {
-        //             // Check if the node name is not "Curriculum" or "Topic"
-        //             if (node.name !== "Curriculum" && node.name !== "Topic") {
-        //                 node.name = node.name + "-" + this.BlockNameID[data.name]++;
-        //             }
-        //             // If it's "Curriculum" or "Topic", do not modify the name
-        //         }
-        //     });
-        // });
-
-    },
-    methods: {
-        executeEditorData() {
-            // Retrieve the editor data, and pass the new value back to
-            // Streamlit via `Streamlit.setComponentValue`.
-            Streamlit.setComponentValue({
-                command: "execute",
-                editor_state: this.editor.save(),
-            });
-        },
-        saveEditorData() {
-            Streamlit.setComponentValue({
-                command: "save",
-                schema_name: this.saveSchemaName,
-                editor_state: this.editor.save(),
-            });
-            this.saveSchemaName = "";
-            this.menuModal = !this.menuModal;
-        },
-        activateTab(tabName) {
-            if (tabName === "listTab") {
-                this.listTab = true;
-                this.saveTab = false;
-            }
-            if (tabName === "saveTab") {
-                this.listTab = false;
-                this.saveTab = true;
-            }
-        },
-    },
-};
-</script>
-
-<style>
+  </script>
+  
+  <style>
 #editorCanvas {
     position: relative;
     height: 85vw;

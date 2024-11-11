@@ -45,7 +45,6 @@ else:
 # and lose its current state. In this case, we want to vary the component's
 # "name" argument without having it get recreated.
 
-
 def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, compute_engine: bool = True, key=None):
     if load_schema:
         editor_schema = load_schema_name(load_schema)
@@ -56,8 +55,6 @@ def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, com
     schema_names_in_db = schemas_in_db['schema_names']
 
     editor_setting = {'compute_engine': compute_engine}
-
-    # base_blocks_data = [block._export() for block in base_blocks]
 
     if isinstance(base_blocks, List):
         base_blocks_data = [block._export() for block in base_blocks]
@@ -74,14 +71,22 @@ def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, com
                     base_blocks_data.append(block_data)
             else:
                 raise TypeError(
-                    'Invalid type for base_blocks passed to the st_barfi component.')
+                    'Invalid type for base_blocks passed to the st_barfi component.'
+                )
     else:
         raise TypeError(
-            'Invalid type for base_blocks passed to the st_barfi component.')
+            'Invalid type for base_blocks passed to the st_barfi component.'
+        )
 
-    _from_client = _component_func(base_blocks=base_blocks_data, load_editor_schema=editor_schema,
-                                   load_schema_names=schema_names_in_db, load_schema_name=load_schema, editor_setting=editor_setting,
-                                   key=key, default={'command': 'skip', 'editor_state': {}})
+    _from_client = _component_func(
+        base_blocks=base_blocks_data,
+        load_editor_schema=editor_schema,
+        load_schema_names=schema_names_in_db,
+        load_schema_name=load_schema,
+        editor_setting=editor_setting,
+        key=key,
+        default={'command': 'skip', 'editor_state': {}}
+    )
 
     if _from_client['command'] == 'execute':
         if compute_engine:
@@ -91,17 +96,26 @@ def st_barfi(base_blocks: Union[List[Block], Dict], load_schema: str = None, com
             _ce._execute_compute()
             return _ce.get_result()
         else:
-            _ce = ComputeEngine(blocks=base_blocks_list)
-            _ce.add_editor_state(_from_client['editor_state'])
-            _ce._map_block_link()
-            # return _ce.get_result()
+            # Return the editor_state so it can be processed externally
             return _from_client
-    if _from_client['command'] == 'save':
+
+    elif _from_client['command'] == 'save':
         save_schema(
-            schema_name=_from_client['schema_name'], schema_data=_from_client['editor_state'])
-    if _from_client['command'] == 'load':
+            schema_name=_from_client['schema_name'],
+            schema_data=_from_client['editor_state']
+        )
+
+    elif _from_client['command'] == 'load':
+        # Load the selected schema
         load_schema = _from_client['schema_name']
         editor_schema = load_schema_name(load_schema)
+
+        # Send the loaded schema back to the frontend
+        _from_client['editor_state'] = editor_schema
+
+        # Return the editor_state so it can be processed
+        return {'command': 'load', 'editor_state': editor_schema}
+
     else:
         pass
 
