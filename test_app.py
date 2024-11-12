@@ -26,6 +26,19 @@ barfi_schema_name = st.selectbox(
     'Select a saved content map:', barfi_schemas()
 )
 
+
+# Add line break before
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Add the centered, italicized information message in a light blue box using Streamlit's default font
+st.write(
+    "<div style='text-align: center; font-style: italic; background-color: rgba(28, 131, 225, 0.1); padding: 15px; border-radius: 5px; border: 1px solid rgba(28, 131, 225, 0.2); color: #fff;'>ℹ️ The relative numbering of your blocks indicate the order in which your inputs will appear in the CSV file. They need not be in exact sequence. For example, Concept-1, Concept-3, Concept-5 will appear in that sequence for the same Sub-Topic.</div>", 
+    unsafe_allow_html=True
+)
+
+# Add line break after
+st.markdown("<br>", unsafe_allow_html=True)
+
 # Remove the compute engine checkbox and set compute_engine to False
 compute_engine = False
 
