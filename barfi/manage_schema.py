@@ -54,3 +54,11 @@ def delete_schema(schema_name: str):
     
     with open('schemas.barfi', 'wb') as handle_write:
         pickle.dump(schemas, handle_write, protocol=pickle.HIGHEST_PROTOCOL)
+
+if __name__ == '__main__':
+    # Delete the schema called 'Eugene' when the program runs
+    try:
+        delete_schema('Eugene')
+        print("Schema 'Eugene' has been deleted successfully.")
+    except ValueError as e:
+        print(e)
