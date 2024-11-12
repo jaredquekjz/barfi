@@ -11,31 +11,36 @@ def curriculum_compute(self):
     # Get the user's input using the new option name
     value = self.get_option('Type here...')
     # Since there is no output interface, we don't need to set it
-    # self.set_interface(name='Output 1', value=value)
     pass  # No further action needed
 
 curriculum.add_compute(curriculum_compute)
 
-# Define the Topic block (Input Block)
+# Define the Topic block
 topic = Block(name='Topic')
-# Remove the output port
-# topic.add_output()
+# **Add an output port to match 'Sub-Topic'**
+topic.add_output()
 topic.add_option(name='Type here...', type='input', value='')
 
 def topic_compute(self):
     value = self.get_option('Type here...')
-    # No output interface to set
-    pass
+    # **Set the output interface value to match 'Sub-Topic'**
+    self.set_interface(name='Output 1', value=value)
 
 topic.add_compute(topic_compute)
 
-# Define the Sub-Topic block (Input Block)
+# Define the Sub-Topic block
 sub_topic = Block(name='Sub-Topic')
+# **Add an input port to match 'Concept'**
+sub_topic.add_input()
 sub_topic.add_output()
 sub_topic.add_option(name='Type here...', type='input', value='')
 
 def sub_topic_compute(self):
+    # **Get the value from the input interface to match 'Concept'**
+    in_value = self.get_interface(name='Input 1')
     value = self.get_option('Type here...')
+    # **Optionally, you might combine 'in_value' and 'value' if needed**
+    # For now, we'll pass 'value' to the output interface
     self.set_interface(name='Output 1', value=value)
 
 sub_topic.add_compute(sub_topic_compute)
@@ -58,6 +63,6 @@ concept.add_compute(concept_compute)
 # Define the base blocks list and category
 base_blocks = [curriculum, topic, sub_topic, concept]
 base_blocks_category = {
-    'Multiple': [sub_topic, concept],
-    'One Per Category': [curriculum, topic],
+    'Multiple': [sub_topic, concept, topic],
+    'One Per Category': [curriculum],
 }

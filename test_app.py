@@ -1,5 +1,3 @@
-# import sys
-# sys.path.append('../')
 from matplotlib import pyplot as plt
 from barfi import st_barfi, barfi_schemas
 import streamlit as st
@@ -7,8 +5,10 @@ from test_blocks import base_blocks, base_blocks_category
 import pandas as pd  # Import pandas for DataFrame
 import json  # Import json to parse JSON strings
 
+st.set_page_config(layout="wide")
+
 def colorful_title(text):
-    colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33F3', '#33FFF3', '#F3FF33']
+    colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33F3', '#FF33F3', '#33FFF3', '#F3FF33']
     colored_text = ''
     color_index = 0
     for char in text:
@@ -37,6 +37,7 @@ barfi_result = st_barfi(
     compute_engine=compute_engine,
     load_schema=barfi_schema_name,
 )
+
 def extract_input_values(barfi_result):
     import json
     import pandas as pd
@@ -81,57 +82,89 @@ def extract_input_values(barfi_result):
             }
         }
 
-    # Collect Level 1 and Level 2 values
-    level1_values = []
-    level2_values = []
-
+    # Collect Level 1 (Curriculum)
+    level1_value = ''
     for node_id, info in node_id_to_info.items():
         if info['type'] == 'Curriculum':
-            level1_value = info['options'].get('Type here...', '')
-            level1_values.append(level1_value)
-        elif info['type'] == 'Topic':
-            level2_value = info['options'].get('Type here...', '')
-            level2_values.append(level2_value)
+            level1_value = info['options'].get('Type here...', '').strip()
+            break  # Assuming only one Curriculum node
 
-    level1_value = level1_values[0] if level1_values else ''
-    level2_value = level2_values[0] if level2_values else ''
+    # Collect Level 2 nodes (Topics)
+    level2_nodes = {}
+    for node_id, info in node_id_to_info.items():
+        if info['type'] == 'Topic':
+            level2_value = info['options'].get('Type here...', '').strip()
+            if level2_value != '':
+                output_interfaces_ids = [
+                    iface_id for iface_id in info['interfaces']
+                    if info['interfaces'][iface_id]['name'].startswith('Output')
+                ]
+                level2_nodes[node_id] = {
+                    'id': node_id,
+                    'value': level2_value,
+                    'output_interfaces_ids': output_interfaces_ids
+                }
 
-    # Identify Level 3 nodes (Sub-Topics), exclude empty names
+    # Collect Level 3 nodes (Sub-Topics)
     level3_nodes = {}
     for node_id, info in node_id_to_info.items():
         if info['type'] == 'Sub-Topic':
             level3_value = info['options'].get('Type here...', '').strip()
             if level3_value != '':
+                input_interfaces_ids = [
+                    iface_id for iface_id in info['interfaces']
+                    if info['interfaces'][iface_id]['name'].startswith('Input')
+                ]
                 output_interfaces_ids = [
                     iface_id for iface_id in info['interfaces']
                     if info['interfaces'][iface_id]['name'].startswith('Output')
                 ]
                 level3_nodes[node_id] = {
+                    'id': node_id,
                     'value': level3_value,
+                    'input_interfaces_ids': input_interfaces_ids,
                     'output_interfaces_ids': output_interfaces_ids
                 }
 
-    # Identify Level 4 nodes (Concepts)
+    # Collect Level 4 nodes (Concepts)
     level4_nodes = {}
     for node_id, info in node_id_to_info.items():
         if info['type'] == 'Concept':
-            level4_value = info['options'].get('Type here...', '')
-            input_interfaces_ids = [
-                iface_id for iface_id in info['interfaces']
-                if info['interfaces'][iface_id]['name'].startswith('Input')
-            ]
-            level4_nodes[node_id] = {
-                'value': level4_value,
-                'input_interfaces_ids': input_interfaces_ids
-            }
+            level4_value = info['options'].get('Type here...', '').strip()
+            if level4_value != '':
+                input_interfaces_ids = [
+                    iface_id for iface_id in info['interfaces']
+                    if info['interfaces'][iface_id]['name'].startswith('Input')
+                ]
+                level4_nodes[node_id] = {
+                    'id': node_id,
+                    'value': level4_value,
+                    'input_interfaces_ids': input_interfaces_ids
+                }
 
-    # Initialize level3_to_level4 with all Level 3 items
-    level3_to_level4 = {
-        level3_info['value']: []
-        for level3_info in level3_nodes.values()
-    }
+    # Build mapping from Level 2 to Level 3
+    level2_to_level3 = {level2_info['value']: [] for level2_info in level2_nodes.values()}
 
-    # Build mapping from Level 3 to their connected Level 4 items
+    for connection in connections:
+        from_interface_id = connection['from']
+        to_interface_id = connection['to']
+
+        # Find Level 2 associated with from_interface_id
+        for level2_id, level2_info in level2_nodes.items():
+            if from_interface_id in level2_info['output_interfaces_ids']:
+                level2_value = level2_info['value']
+
+                # Find Level 3 associated with to_interface_id
+                for level3_id, level3_info in level3_nodes.items():
+                    if to_interface_id in level3_info['input_interfaces_ids']:
+                        level3_value = level3_info['value']
+
+                        if level3_value not in level2_to_level3[level2_value]:
+                            level2_to_level3[level2_value].append(level3_value)
+
+    # Build mapping from Level 3 to Level 4
+    level3_to_level4 = {level3_info['value']: [] for level3_info in level3_nodes.values()}
+
     for connection in connections:
         from_interface_id = connection['from']
         to_interface_id = connection['to']
@@ -146,47 +179,55 @@ def extract_input_values(barfi_result):
                     if to_interface_id in level4_info['input_interfaces_ids']:
                         level4_value = level4_info['value']
 
-                        # Add Level 4 under the Level 3
-                        level3_to_level4[level3_value].append(level4_value)
+                        if level4_value not in level3_to_level4[level3_value]:
+                            level3_to_level4[level3_value].append(level4_value)
 
     # Build DataFrame data
     data_list = []
-
-    # Add Level 1 and Level 2 as the first row, exclude 'Level 3' and 'Level 4' keys
-    data_list.append({
-        'Type': '',
-        'Level 1': level1_value,
-        'Level 2': level2_value,
-        # 'Level 3' and 'Level 4' are intentionally excluded
-    })
-
-    # For each Level 3 item and its Level 4 items
-    for level3_value, level4_list in level3_to_level4.items():
-        # Skip if level3_value is empty
-        if level3_value.strip() == '':
-            continue
-
-        # Add Level 3 row with orange text and 'Node' in 'Type' column
-        data_list.append({
-            'Type': 'Node',  # Set 'Type' to 'Node' for Level 3 Sub-Topics
-            'Level 1': '',
-            'Level 2': '',
-            'Level 3': f"<span style='color: orange;'>{level3_value}</span>",  # Level 3 in orange
-            'Level 4': ''
-        })
-        # Add Level 4 items under the Level 3
-        if level4_list:
-            for level4_value in level4_list:
-                data_list.append({
-                    'Type': 'LO',  # Add 'LO' in 'Type' column for Level 4 Concepts
-                    'Level 1': '',
-                    'Level 2': '',
-                    'Level 3': level4_value,  # Level 4 value here
-                    'Level 4': ''
-                })
+    for idx, (level2_value, level3_list) in enumerate(level2_to_level3.items()):
+        # Only add the Level 1 and Level 2 row if it's the first Topic
+        if idx == 0:
+            data_list.append({
+                'Type': '',  # Or 'Topic' if you prefer
+                'Level 1': level1_value,
+                'Level 2': level2_value,
+                'Level 3': '',
+                'Level 4': ''
+            })
         else:
-            # Optionally, include a message if there are no Level 4 items
-            pass  # No action needed if you don't want to add an empty row
+            # For additional Topics, only add Level 2
+            data_list.append({
+                'Type': '',
+                'Level 1': '',
+                'Level 2': level2_value,
+                'Level 3': '',
+                'Level 4': ''
+            })
+
+        for level3_value in level3_list:
+            # Add Level 3 Sub-Topic row
+            data_list.append({
+                'Type': 'Node',
+                'Level 1': '',
+                'Level 2': '',
+                'Level 3': f"<span style='color: orange;'>{level3_value}</span>",
+                'Level 4': ''
+            })
+
+            # Add Level 4 items under the Level 3 in Level 3 column
+            level4_list = level3_to_level4.get(level3_value, [])
+            if level4_list:
+                for level4_value in level4_list:
+                    data_list.append({
+                        'Type': 'LO',
+                        'Level 1': '',
+                        'Level 2': '',
+                        'Level 3': level4_value,  # Level 4 value shown in Level 3 column
+                        'Level 4': ''  # Keep Level 4 column empty
+                    })
+            else:
+                # Optionally, include a message if there are no Level 4 items
+                pass
 
     # Create DataFrame
     df = pd.DataFrame(data_list)
@@ -208,6 +249,9 @@ def extract_input_values(barfi_result):
 
     # Remove "Type" from the heading of the first column
     df.rename(columns={'Type': ''}, inplace=True)
+
+    # Remove any rows where all Level columns are empty (to remove empty rows)
+    df = df[(df[['Level 1', 'Level 2', 'Level 3', 'Level 4']] != '').any(axis=1)]
 
     # Adjust DataFrame styles for alignment and display
     df_style = df.style.set_properties(**{'text-align': 'left'}).hide_index()
@@ -239,6 +283,6 @@ def extract_input_values(barfi_result):
             file_name=file_name,
             mime='text/csv',
         )
+
 if barfi_result:
-    # st.write(barfi_result)
     extract_input_values(barfi_result)
